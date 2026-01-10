@@ -24,13 +24,13 @@ def generate_launch_description():
     
     declare_model_file_cmd = DeclareLaunchArgument(
         'model_file',
-        default_value=os.path.join(interface_dir, "domain", "example.pddl"),
+        default_value=os.path.join(interface_dir, "domain", "ass_domain.pddl"),
         description='PDDL Model file'
     )
 
     declare_problem_file_cmd = DeclareLaunchArgument(
         'problem_file', 
-        default_value=os.path.join(interface_dir, "domain", "problem.pddl"),
+        default_value=os.path.join(interface_dir, "domain", "ass_problem.pddl"),
         description='PDDL Problem file')
         
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -126,7 +126,15 @@ def generate_launch_description():
         namespace=namespace,
         output='screen',
         parameters=[])
-        
+    
+    detect_id_cmd = Node(
+        package='plansys_interface',
+        executable='detect_id',
+        name='detect_id',
+        namespace=namespace,
+        output='screen',
+        parameters=[]) 
+           
     move_cmd = Node(
         package='plansys_interface',
         executable='move_action_node_3',
@@ -167,8 +175,9 @@ def generate_launch_description():
     ld.add_action(planner_cmd)
     ld.add_action(executor_cmd)
     ld.add_action(lifecycle_manager_cmd)
-    ld.add_action(move_cmd)
-    ld.add_action(charge_cmd)
-    ld.add_action(ask_charge_cmd)
+    ld.add_action(detect_id_cmd)
+    # ld.add_action(move_cmd)
+    # ld.add_action(charge_cmd)
+    # ld.add_action(ask_charge_cmd)
     
     return ld
