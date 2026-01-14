@@ -2,9 +2,9 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "lifecycle_msgs/msg/transition.hpp"
+#include "nav2_msgs/action/navigate_through_poses.hpp"
 #include <memory>
 #include <chrono>
 #include <string>
@@ -25,7 +25,7 @@ struct Point {
   // }
 };
 
-#define INT_POINTS 3
+#define INT_POINTS 0
 
 using namespace std::chrono_literals;
 
@@ -41,9 +41,9 @@ public:
     );
 
     nav2_node_ = rclcpp::Node::make_shared("move_action_nav2_client");
-    nav2_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-      nav2_node_, "navigate_to_pose"
-    );
+
+    nav2_client_  = rclcpp_action::create_client<nav2_msgs::action::NavigateThroughPoses>(
+            nav2_node_, "navigate_through_poses");
   }
 
 private:
@@ -102,61 +102,52 @@ private:
       const Point starting = goals[wp_starting_point];
       const Point ending = goals[wp_to_navigate];
 
-      std::array<Point, INT_POINTS + 1> intermediate_points;
+      // std::array<Point, INT_POINTS + 1> intermediate_points;
       std::cout << "Starting point " << "x: " << starting.x << "y: " << starting.y << std::endl;
 
+      auto goal_msg = nav2_msgs::action::NavigateThroughPoses::Goal();
 
-      for (int i = 0; i < INT_POINTS; ++i) {
-        intermediate_points[i].x = ((INT_POINTS - i) * starting.x + (i + 1) * ending.x) / (INT_POINTS + 1.0);
-        intermediate_points[i].y = ((INT_POINTS - i) * starting.y + (i + 1) * ending.y) / (INT_POINTS + 1.0);
-        std::cout << "Intermediate point " << i << "x: " << intermediate_points[i].x << "y: " << intermediate_points[i].y << std::endl;
+      for (int i = 0; i < INT_POINTS + 1; ++i) {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.header.frame_id = "map";
+        pose.pose.position.x = ((INT_POINTS - i) * starting.x + (i + 1) * ending.x) / (INT_POINTS + 1.0);
+        pose.pose.position.y = ((INT_POINTS - i) * starting.y + (i + 1) * ending.y) / (INT_POINTS + 1.0);
+        std::cout << "Intermediate point " << i << "x: " << pose.pose.position.x << "y: " << pose.pose.position.y << std::endl;
+        
+        //pose.pose.orientation.w = 1.0;
+        goal_msg.poses.push_back(pose);
       }
-      intermediate_points[intermediate_points.size() - 1] = ending;
-      std::cout << "End point " << "x: " << ending.x << "y: " << ending.y << std::endl;
 
-      int goal_idx = 0;
+      auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
 
-      geometry_msgs::msg::PoseStamped goal_pose;
-      goal_pose.header.frame_id = "map";
-      goal_pose.pose.position.x = intermediate_points[0].x;
-      goal_pose.pose.position.y = intermediate_points[0].y;
-      goal_pose.pose.orientation.w = 1.0;
-
-      auto goal_msg = nav2_msgs::action::NavigateToPose::Goal();
-      goal_msg.pose = goal_pose;
-
-      rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions send_goal_options;
-      auto callback = [this, intermediate_points, &goal_idx, &send_goal_options]
-        (const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult & result)
+      auto feedback_callback = [this]
+        (const std::shared_ptr<const nav2_msgs::action::NavigateThroughPoses::Feedback> feedback)
         {
-          ++goal_idx;
-          std::cout << "Setting starting point with idx: " << goal_idx << std::endl;
+          std::cout << "Number of poses remainings: " << feedback->number_of_poses_remaining << std::endl;
+          if (feedback->number_of_poses_remaining <= 0) {
 
-          if (goal_idx >= intermediate_points.size()) {
+            finish(true, 1.0, "move completed");
+          }
+        };
+
+      auto result_callback = [this]
+        (const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateThroughPoses>::WrappedResult & result)
+        {
             if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
               this->goal_sent_= false;
               progress_ = 1.0;
-              // RCLCPP_INFO(get_logger(), "Reached waypoint:");
-              finish(true, 1.0, "Move completed");
+              // rclcpp_info(get_logger(), "reached waypoint:");
+              finish(true, 1.0, "move completed");
             } else {
-              // RCLCPP_ERROR(get_logger(), "Navigation failed");
-              finish(true, 1.0, "Move failed");
+              // rclcpp_error(get_logger(), "navigation failed");
+              finish(true, 1.0, "move failed");
             }
-            return;
-          }
-          
-          geometry_msgs::msg::PoseStamped goal_pose;
-          goal_pose.header.frame_id = "map";
-          goal_pose.pose.position.x = intermediate_points[goal_idx].x;
-          goal_pose.pose.position.y = intermediate_points[goal_idx].y;
-          goal_pose.pose.orientation.w = 1.0;
-          auto goal_msg = nav2_msgs::action::NavigateToPose::Goal();
-          goal_msg.pose = goal_pose;
-
-          this->nav2_client_->async_send_goal(goal_msg, send_goal_options);
         };
+          
+  
 
-      send_goal_options.result_callback = callback;
+      // send_goal_options.feedback_callback = feedback_callback;
+      send_goal_options.result_callback = result_callback;
         
       nav2_client_->async_send_goal(goal_msg, send_goal_options);
       goal_sent_ = true;
@@ -169,7 +160,7 @@ private:
     // double rem_dist   = std::hypot(goal_x - current_x_, goal_y - current_y_);
     // progress_ = total_dist > 0.0 ? 1.0 - std::min(rem_dist / total_dist, 1.0) : 1.0;
 
-    send_feedback(progress_, "Moving to " + wp_to_navigate);
+    // send_feedback(progress_, "Moving to " + wp_to_navigate);
 
     // if (rem_dist < 0.6) {
     //   goal_sent_= false;
@@ -193,7 +184,7 @@ private:
   double current_x_ = 0.0, current_y_ = 0.0;
 
   rclcpp::Node::SharedPtr nav2_node_;
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr nav2_client_;
+  rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SharedPtr nav2_client_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_;
 };
 
