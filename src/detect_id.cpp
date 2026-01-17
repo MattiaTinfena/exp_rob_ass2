@@ -1,4 +1,5 @@
 #include "plansys2_executor/ActionExecutorClient.hpp"
+#include "plansys2_problem_expert/ProblemExpertClient.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -117,7 +118,7 @@ public:
     nav2_client_  = rclcpp_action::create_client<nav2_msgs::action::NavigateThroughPoses>(
             nav2_node_, "navigate_through_poses");
 
-    // domain_expert_ = std::make_shared<plansys2::DomainExpertClient>(shared_from_this());
+    problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>();
   }
 
 private:
@@ -130,6 +131,17 @@ private:
       finish(false, 0.0, "Insufficient arguments");
       return;
     }
+
+    std::cout << "DO WORK";
+    auto id_1 = this->problem_expert_->getFunction("marker_id m1");
+
+    std::cout << "name:" << id_1->name << "value:" << id_1->value <<  std::endl;
+
+    // id_1->value += 1;
+
+    //this->problem_expert_->updateFunction(*id_1);
+    this->problem_expert_->updateFunction(plansys2::Function("(= (marker_id m1)" + std::to_string(100) + ")"));
+
 
     std::unordered_map<std::string, Point> goals=
     {
@@ -221,7 +233,7 @@ private:
   rclcpp::Node::SharedPtr nav2_node_;
   rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SharedPtr nav2_client_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_;
-  std::shared_ptr<plansys2::DomainExpertClient> domain_expert_;
+  std::shared_ptr<plansys2::ProblemExpertClient> problem_expert_;
 };
 
 
