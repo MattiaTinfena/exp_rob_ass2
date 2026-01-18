@@ -16,6 +16,11 @@
         (= (num_id_detected) 0)
         (= (num_photo_taken) 0)
 
+        (= (marker_id m1) -1)
+        (= (marker_id m2) -1)
+        (= (marker_id m3) -1)
+        (= (marker_id m4) -1)
+
         (is_base base)
 
         (marker_at m1 p1)
@@ -41,10 +46,11 @@
 
     (:goal
         ( and
-            (visited m1)
-            (visited m2)
-            (visited m3)
-            (visited m4)
+            (photo_taken m1)            
+            (photo_taken m2)      
+            (photo_taken m3)      
+            (photo_taken m4)  
+            (robot_at robot1 base)    
         )
     )
 )

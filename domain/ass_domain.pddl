@@ -28,6 +28,7 @@
         (num_id_detected)
         (num_photo_taken)
         (num_marker)
+        (marker_id ?m - marker)
     )
 
     (:durative-action detect_id
@@ -51,15 +52,25 @@
         )
     )
     
-    (:action change_to_acquire_state
-        :parameters (?r - robot)
-        :precondition (and 
-            (detecting ?r)
-            (= (num_id_detected) (num_marker))
+    (:durative-action change_to_acquire_state
+        :parameters (?r - robot ?m1 ?m2 ?m3 ?m4 - marker)
+        :duration ( = ?duration 3)
+        :condition (and 
+            (at start(detecting ?r))
+            (at start(= (num_id_detected) (num_marker)))
+            ;(at start(robot_free ?r))
+            ; (at start(visited ?m1))
+            ; (at start(visited ?m2))
+            ; (at start(visited ?m3))
+            ; (at start(visited ?m4))
         )
         :effect(and
-            (not(detecting ?r))
-            (acquiring_imgs ?r)
+            (at end(not(detecting ?r)))
+            (at end(acquiring_imgs ?r))
+            ; (at start(not(robot_free ?r)))
+            ; (at end(robot_free ?r))
+
+
         )
     )
 

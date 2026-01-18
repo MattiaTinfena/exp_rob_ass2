@@ -8,7 +8,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-
 def generate_launch_description():
     bringup_dir = get_package_share_directory('plansys2_bringup')
     print ("bringup_dir:", bringup_dir)
@@ -116,6 +115,7 @@ def generate_launch_description():
         launch_arguments={
             'namespace': namespace,
             'params_file': params_file
+            # 'plan_solver_plugins': ['DFGHJ']
         }.items())
 
    
@@ -136,29 +136,29 @@ def generate_launch_description():
         parameters=[]) 
     
     
-    move_cmd = Node(
+    change_state_cmd = Node(
         package='plansys_interface',
-        executable='move_action_node_3',
-        name='move_action_node',
+        executable='change_state',
+        name='change_state',
         namespace=namespace,
         output='screen',
         parameters=[])
 
-    charge_cmd = Node(
+    capture_first_cmd = Node(
         package='plansys_interface',
-        executable='charge_action_node',
-        name='charge_action_node',
+        executable='capture_first',
+        name='capture_first',
         namespace=namespace,
         output='screen',
         parameters=[])
 
-    ask_charge_cmd = Node(
+    capture_other_cmd = Node(
         package='plansys_interface',
-        executable='ask_charge_action_node',
-        name='ask_charge_action_node',
+        executable='capture_other',
+        name='capture_other',
         namespace=namespace,
         output='screen',
-        parameters=[])  
+        parameters=[])
         
     ld = LaunchDescription()
 
@@ -177,8 +177,8 @@ def generate_launch_description():
     ld.add_action(executor_cmd)
     ld.add_action(lifecycle_manager_cmd)
     ld.add_action(detect_id_cmd)
-    # ld.add_action(move_cmd)
-    # ld.add_action(charge_cmd)
-    # ld.add_action(ask_charge_cmd)
-    
+    ld.add_action(change_state_cmd)
+    ld.add_action(capture_first_cmd)
+    ld.add_action(capture_other_cmd)
+
     return ld
