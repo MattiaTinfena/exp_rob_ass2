@@ -3,6 +3,7 @@ geometry_msgs/Pose goal
 ---
 # Result
 bool success
+int64 detected_id
 ---
 # Feedback
 float32 feedback

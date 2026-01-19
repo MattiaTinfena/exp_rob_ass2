@@ -77,25 +77,25 @@ class ChangeStateAction : public plansys2::ActionExecutorClient {
 
 		rclcpp::sleep_for(1s);
 
-		this->problem_expert_->removePredicate(
-			plansys2::Predicate("(is_first m3)"));
-		this->problem_expert_->removePredicate(
-			plansys2::Predicate("(is_next m4 m3)"));
-		this->problem_expert_->removePredicate(
-			plansys2::Predicate("(is_next m1 m4)"));
-		this->problem_expert_->removePredicate(
-			plansys2::Predicate("(is_next m2 m1)"));
+		// this->problem_expert_->removePredicate(
+		// 	plansys2::Predicate("(is_first m3)"));
+		// this->problem_expert_->removePredicate(
+		// 	plansys2::Predicate("(is_next m4 m3)"));
+		// this->problem_expert_->removePredicate(
+		// 	plansys2::Predicate("(is_next m1 m4)"));
+		// this->problem_expert_->removePredicate(
+		// 	plansys2::Predicate("(is_next m2 m1)"));
 
-		this->problem_expert_->addPredicate(
-			plansys2::Predicate("(is_first m1)"));
-		this->problem_expert_->addPredicate(
-			plansys2::Predicate("(is_next m2 m1)"));
-		this->problem_expert_->addPredicate(
-			plansys2::Predicate("(is_next m3 m2)"));
-		this->problem_expert_->addPredicate(
-			plansys2::Predicate("(is_next m4 m3)"));
+		// this->problem_expert_->addPredicate(
+		// 	plansys2::Predicate("(is_first m1)"));
+		// this->problem_expert_->addPredicate(
+		// 	plansys2::Predicate("(is_next m2 m1)"));
+		// this->problem_expert_->addPredicate(
+		// 	plansys2::Predicate("(is_next m3 m2)"));
+		// this->problem_expert_->addPredicate(
+		// 	plansys2::Predicate("(is_next m4 m3)"));
 
-		rclcpp::sleep_for(1s);
+		// rclcpp::sleep_for(1s);
 
 		//---------------------------STATE CHANGED------------------------------
 

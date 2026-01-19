@@ -56,10 +56,10 @@ class GoToPointNode : public rclcpp::Node {
 				if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
 					RCLCPP_ERROR(get_logger(), "Navigation failed:");
 					result_msg->success = false;
+					result_msg->detected_id = -1;
 					this->goal_handle->succeed(result_msg);
 				} else {
 					RCLCPP_INFO(get_logger(), "Aligning");
-					result_msg->success = true;
 					align = true;
 				}
 			};
@@ -106,41 +106,38 @@ void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr &msg) {
 		cv::aruco::detectMarkers(img, dictionary, markerCorners, markerIds,
 								 parameters, rejectedCandidates);
 
-		geometry_msgs::msg::Point message;
-
 		int x_center = 0, y_center = 0;
 
 		if (markerIds.size() == 1) {
-			message.z = markerIds[0];
-
 			for (int i = 0; i < markerCorners[0].size(); i++) {
 				x_center += markerCorners[0][i].x;
 				y_center += markerCorners[0][i].y;
 			}
 			x_center /= 4;
 			y_center /= 4;
-		}
 
-		const int x_error = 640 / 2 - x_center;
+			const int x_error = 640 / 2 - x_center;
 
-		geometry_msgs::msg::Twist twist{};
+			geometry_msgs::msg::Twist twist{};
 
-		if (std::abs(x_error) < 20) {
-			align = false;
-			std::cout << "CORRECTLY ALIGNED" << std::endl;
+			if (std::abs(x_error) < 20) {
+				align = false;
+				std::cout << "CORRECTLY ALIGNED" << std::endl;
+				velocity_publisher->publish(twist);
+				auto result_msg = std::make_shared<GoToPoint::Result>();
+				result_msg->success = true;
+				result_msg->detected_id = markerIds[0];
+				go_to_point_node->goal_handle->succeed(result_msg);
+				return;
+			}
+
+			if (x_error < 0) {
+				twist.angular.z = -0.2;
+			} else {
+				twist.angular.z = 0.2;
+			}
 			velocity_publisher->publish(twist);
-			auto result_msg = std::make_shared<GoToPoint::Result>();
-			result_msg->success = true;
-			go_to_point_node->goal_handle->succeed(result_msg);
-			return;
 		}
-
-		if (x_error < 0) {
-			twist.angular.z = -0.2;
-		} else {
-			twist.angular.z = 0.2;
-		}
-		velocity_publisher->publish(twist);
 
 	} catch (cv_bridge::Exception &e) {
 		RCLCPP_ERROR(rclcpp::get_logger("subscriber"),
