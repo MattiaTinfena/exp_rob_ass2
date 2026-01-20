@@ -7,6 +7,7 @@
 #include "opencv2/highgui.hpp"
 #include "plansys2_executor/ActionExecutorClient.hpp"
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
+#include "plansys_interface/action/go_to_point.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -24,26 +25,87 @@
 
 using namespace std::chrono_literals;
 
+geometry_msgs::msg::Pose make_pose(double x, double y, double qz, double qw) {
+	geometry_msgs::msg::Pose p;
+	p.position.x = x;
+	p.position.y = y;
+	p.orientation.z = qz;
+	p.orientation.w = qw;
+	return p;
+}
 class CaptureOtherAction : public plansys2::ActionExecutorClient {
+	using GoToPoint = plansys_interface::action::GoToPoint;
+	using GoalHandleGoToPoint = rclcpp_action::ClientGoalHandle<GoToPoint>;
+
   public:
 	CaptureOtherAction()
-		: plansys2::ActionExecutorClient("capture_other_imgs", 500ms) {}
+		: plansys2::ActionExecutorClient("capture_other_imgs", 500ms) {
+		go_to_point_client_ =
+			rclcpp_action::create_client<GoToPoint>(this, "go_to_point");
+		problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>();
+	}
 
   private:
 	void do_work() override {
 		auto args = get_arguments();
 		if (args.size() == 0) {
 			RCLCPP_ERROR(get_logger(),
-						 "Not enough arguments for capturing other image");
+						 "Not enough arguments for capturing other images");
 			finish(false, 0.0, "Insufficient arguments");
 			return;
 		}
 
-		std::cout << "CAPTURE OTHER IMGS" << std::endl;
-		finish(true, 1.0, "Other images captured");
-	}
-};
+		std::unordered_map<std::string, geometry_msgs::msg::Pose> goals{};
 
+		goals["p1"] = make_pose(-6.0, -4.5, -0.9238, 0.3826);
+		goals["p2"] = make_pose(-6.0, 7.5, 0.9238, 0.3826);
+		goals["p3"] = make_pose(6.0, -4.5, -0.3826, 0.9238);
+		goals["p4"] = make_pose(6.0, 7.5, 0.3826, 0.9238);
+
+		const std::string wp_to_navigate = args[1];
+
+		if (!goal_sent_) {
+			if (!go_to_point_client_->wait_for_action_server(1s)) {
+				RCLCPP_WARN(get_logger(), "NavigateToPose server not ready");
+				return;
+			}
+			GoToPoint::Goal goal_msg{};
+			goal_msg.goal = goals[wp_to_navigate];
+			goal_msg.capture_img = true;
+			RCLCPP_INFO(get_logger(), "goal created");
+
+			goal_sent_ = true;
+
+			auto send_goal_options =
+				rclcpp_action::Client<GoToPoint>::SendGoalOptions();
+
+			send_goal_options.result_callback =
+				[this, wp_to_navigate](
+					const GoalHandleGoToPoint::WrappedResult &result) {
+					if (result.result->success) {
+						std::cout << "Goal reached" << std::endl;
+						finish(true, 1.0, "Id detected");
+						goal_sent_ = false;
+
+					} else {
+						finish(false, 0.0, "Goal failed");
+						goal_sent_ = false;
+					}
+				};
+			RCLCPP_INFO(get_logger(), "goal options created");
+
+			go_to_point_client_->async_send_goal(goal_msg, send_goal_options);
+			RCLCPP_INFO(get_logger(), "goal sent");
+		}
+		// std::cout << "CAPTURE OTHER IMG  " << wp_to_navigate << std::endl;
+	}
+	std::shared_ptr<plansys2::ProblemExpertClient> problem_expert_;
+
+	rclcpp_action::Client<plansys_interface::action::GoToPoint>::SharedPtr
+		go_to_point_client_;
+	bool goal_sent_;
+	float progress_;
+};
 int main(int argc, char **argv) {
 	rclcpp::init(argc, argv);
 

@@ -46,7 +46,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
 target_link_libraries(go_to_point_action "${cpp_typesupport_target}")
 target_link_libraries(detect_id "${cpp_typesupport_target}")
-
+target_link_libraries(capture_first "${cpp_typesupport_target}")  
+target_link_libraries(capture_other "${cpp_typesupport_target}")
 
 ament_target_dependencies(get_plan
   rclcpp

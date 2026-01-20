@@ -25,7 +25,6 @@
 #include <string>
 #include <unordered_map>
 
-rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr velocity_publisher;
 using namespace std::chrono_literals;
 
 geometry_msgs::msg::Pose make_pose(double x, double y, double qz, double qw) {
@@ -77,7 +76,6 @@ class DetectIdAction : public plansys2::ActionExecutorClient {
 				return;
 			}
 			GoToPoint::Goal goal_msg{};
-
 			goal_msg.goal = goals[wp_to_navigate];
 			goal_msg.capture_img = false;
 			RCLCPP_INFO(get_logger(), "goal created");
@@ -153,7 +151,6 @@ int main(int argc, char **argv) {
 		lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 	detect_id_node->trigger_transition(
 		lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
-	std::cout << "transition" << std::endl;
 
 	rclcpp::executors::SingleThreadedExecutor executor;
 
