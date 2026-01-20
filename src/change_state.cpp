@@ -110,19 +110,9 @@ class ChangeStateAction : public plansys2::ActionExecutorClient {
 			prev_marker = marker_num;
 		}
 
-		// this->problem_expert_->addPredicate(
-		// 	plansys2::Predicate("(is_first m1)"));
-		// this->problem_expert_->addPredicate(
-		// 	plansys2::Predicate("(is_next m2 m1)"));
-		// this->problem_expert_->addPredicate(
-		// 	plansys2::Predicate("(is_next m3 m2)"));
-		// this->problem_expert_->addPredicate(
-		// 	plansys2::Predicate("(is_next m4 m3)"));
-
 		rclcpp::sleep_for(1s);
 
-		//---------------------------STATE
-		// CHANGED------------------------------
+		//--------------------STATE CHANGED------------------------------
 
 		executor_client_->cancel_plan_execution();
 		auto domain = domain_expert_->getDomain();
@@ -133,8 +123,6 @@ class ChangeStateAction : public plansys2::ActionExecutorClient {
 						   "m3)(photo_taken m4))"));
 
 		problem = problem_expert_->getProblem();
-
-		// std::cout << "Domain:" << domain << std::endl;
 
 		std::cout << "Problem:" << problem << std::endl;
 
@@ -147,7 +135,6 @@ class ChangeStateAction : public plansys2::ActionExecutorClient {
 		}
 
 		else {
-			// std::cout << plan.value() << std::endl;
 			executor_client_->start_plan_execution(plan.value());
 		}
 	}
