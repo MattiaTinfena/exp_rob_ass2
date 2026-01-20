@@ -164,7 +164,8 @@ void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr &msg) {
 
 				cv::circle(img, center, (int)radius, cv::Scalar(0, 0, 255), 3);
 				cv::imshow("Image with circle", img);
-				cv::waitKey(1);
+				cv::waitKey(3000);
+				cv::destroyAllWindows();
 				go_to_point_node->goal_handle->succeed(result_msg);
 			}
 		}
@@ -187,8 +188,8 @@ int main(int argc, char **argv) {
 		rclcpp::Node::make_shared("image_listener", options);
 	image_listener_node->declare_parameter<std::string>("image_transport",
 														"compressed");
-	cv::namedWindow("Image with circle");
-	cv::startWindowThread();
+	// cv::namedWindow("Image with circle");
+	// cv::startWindowThread();
 	image_transport::ImageTransport it(image_listener_node);
 	image_transport::TransportHints hints(image_listener_node.get());
 
