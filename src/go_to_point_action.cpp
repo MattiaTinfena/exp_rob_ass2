@@ -112,7 +112,7 @@ void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr &msg) {
 
 		int x_center = 0, y_center = 0;
 
-		if (markerIds.size() != 1) {
+		if (markerIds.size() < 1) {
 			return;
 		}
 
@@ -161,6 +161,8 @@ void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr &msg) {
 				align = false;
 
 				cv::Point center((int)x_center, (int)y_center);
+
+				velocity_publisher->publish(geometry_msgs::msg::Twist{});
 
 				cv::circle(img, center, (int)radius, cv::Scalar(0, 0, 255), 3);
 				cv::imshow("Image with circle", img);
