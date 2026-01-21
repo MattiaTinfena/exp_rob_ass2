@@ -21,7 +21,7 @@ Then it updates the problem, changing some predicates and setting a new goal (fo
 This simulations has been realized with ROS2 Jazzy, Gazebo sim for the simulation environment, aruco_opencv library for marker (and their ids) detection, exp_rob_ass2 for launching and using Plansys in distributed form and nav2 for navigation and mapping in the environment.
 
 #### Simulation 
-(gif)
+![Simulation](./gifs/Ass2.gif)
 
 ### Environment setup
 Use ROS2 Jazzy to ensure compatibility
