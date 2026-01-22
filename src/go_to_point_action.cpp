@@ -6,6 +6,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "std_msgs/msg/header.hpp"
 #include <opencv2/aruco.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -18,6 +19,7 @@ using namespace std::chrono_literals;
 bool align;
 
 rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr velocity_publisher;
+image_transport::Publisher circle_pub;
 
 class GoToPointNode : public rclcpp::Node {
   public:
@@ -175,6 +177,9 @@ void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr &msg) {
 				cv::imshow("Image with circle", img);
 				cv::waitKey(3000);
 				cv::destroyAllWindows();
+
+				circle_pub.publish(
+					cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg());
 				result_msg->success = true;
 				result_msg->detected_id = markerIds[0];
 				go_to_point_node->goal_handle->succeed(result_msg);
@@ -206,6 +211,8 @@ int main(int argc, char **argv) {
 
 	image_transport::Subscriber sub =
 		it.subscribe("camera/image", 1, image_callback, &hints);
+	circle_pub = it.advertise("image_with_circle", 1);
+
 	velocity_publisher =
 		image_listener_node->create_publisher<geometry_msgs::msg::Twist>(
 			"/cmd_vel", 10);
